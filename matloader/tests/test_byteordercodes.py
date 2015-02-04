@@ -6,7 +6,7 @@ import sys
 
 from numpy.testing import assert_raises, assert_, run_module_suite
 
-import scipy.io.matlab.byteordercodes as sibc
+import matloader.byteordercodes as sibc
 
 
 def test_native():

@@ -5,7 +5,7 @@ import sys
 
 from numpy.testing import assert_array_equal, run_module_suite
 
-from scipy.io.matlab.mio import loadmat
+from matloader.mio import loadmat
 
 
 test_data_path = pjoin(dirname(__file__), "data")

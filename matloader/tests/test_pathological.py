@@ -11,7 +11,7 @@ from nose.tools import assert_true
 
 from numpy.testing import run_module_suite
 
-from scipy.io.matlab.mio import loadmat
+from matloader.mio import loadmat
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
 

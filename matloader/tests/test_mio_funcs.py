@@ -18,7 +18,7 @@ from numpy.testing import \
 
 import numpy as np
 
-from scipy.io.matlab.mio import loadmat
+from matloader.mio import loadmat
 
 test_data_path = pjoin(dirname(__file__), 'data')
 

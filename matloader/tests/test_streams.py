@@ -24,9 +24,9 @@ from nose.tools import assert_true, assert_false, assert_equal, assert_raises
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            run_module_suite)
 
-from scipy.io.matlab.streams import (
-    GenericStream, cStringStream, FileStream, ZlibInputStream,
-    make_stream, _readinto, _read_string)
+from matloader.streams import (
+    GenericStream, cStringStream, FileStream, ZlibInputStream, make_stream,
+    _readinto, _read_string)
 
 
 fs = None

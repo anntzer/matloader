@@ -27,12 +27,12 @@ import numpy as np
 from numpy import array
 import scipy.sparse as SP
 
-import scipy.io.matlab.byteordercodes as boc
-from scipy.io.matlab.miobase import matdims, MatWriteError, MatReadError
-from scipy.io.matlab.mio import (mat_reader_factory, loadmat, savemat, whosmat)
-from scipy.io.matlab.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
-                                  MatlabFunction, varmats_from_mat)
-from scipy.io.matlab import mio5_params as mio5p
+import matloader.byteordercodes as boc
+from matloader.miobase import matdims, MatWriteError, MatReadError
+from matloader.mio import mat_reader_factory, loadmat, savemat, whosmat
+from matloader.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
+                            MatlabFunction, varmats_from_mat)
+from matloader import mio5_params as mio5p
 
 
 test_data_path = pjoin(dirname(__file__), 'data')

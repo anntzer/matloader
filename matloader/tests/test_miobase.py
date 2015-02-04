@@ -9,7 +9,7 @@ from numpy.testing import (assert_almost_equal,
 from nose.tools import (assert_true, assert_false, assert_raises,
                         assert_equal, assert_not_equal)
 
-from scipy.io.matlab.miobase import matdims
+from matloader.miobase import matdims
 
 
 def test_matdims():

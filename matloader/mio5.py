@@ -87,7 +87,9 @@ from numpy.compat import asbytes
 
 import scipy.sparse
 
-from scipy.lib.six import string_types, unichr as chr
+from scipy.lib.six import string_types, PY3
+if not PY3:
+    chr = unichr
 
 from . import byteordercodes as boc
 from .byteordercodes import native_code, swapped_code

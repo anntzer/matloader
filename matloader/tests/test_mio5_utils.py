@@ -18,11 +18,11 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal, \
 
 from scipy.lib.six import u
 
-import scipy.io.matlab.byteordercodes as boc
-import scipy.io.matlab.streams as streams
-from scipy.io.matlab.mio5 import MatFile5Reader
-import scipy.io.matlab.mio5_params as mio5p
-import scipy.io.matlab.mio5_utils as m5u
+import matloader.byteordercodes as boc
+import matloader.streams as streams
+from matloader.mio5 import MatFile5Reader
+import matloader.mio5_params as mio5p
+import matloader.mio5_utils as m5u
 
 
 def test_byteswap():
