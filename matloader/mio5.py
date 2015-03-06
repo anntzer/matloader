@@ -74,7 +74,7 @@ script I was working with.
 
 from collections import Counter, namedtuple
 from io import BytesIO
-from itertools import islice
+from itertools import chain, islice
 import os
 import struct
 import sys
@@ -346,10 +346,7 @@ class MatFile5Reader(MatFileReader):
                     pr = MatlabFunction(next(reader).data)
                     dtype = object
                 elif matrix_cls == mxOPAQUE_CLASS:
-                    # MATLAB stores the object name where the dims should be and
-                    # the dims... somewhere I don't know.  FIXME
                     name, = self._as_identifiers(dims) or ("",)
-                    dims = []
                     opaque_components = []
                     while stream.tell() < entry_end:
                         opaque_components.append(next(reader))
@@ -362,14 +359,14 @@ class MatFile5Reader(MatFileReader):
                             pr[()]["s{}".format(i)] = component
                         dtype = pr.dtype
                     else:
-                        classname, ver_indices = opaque_components
-                        ver_indices, = ver_indices.data.T.tolist()
-                        if ver_indices[:4] != [0xdd000000, 2, 1, 1]:
+                        classname, opaque_ids = opaque_components
+                        opaque_ids = opaque_ids.data
+                        if not self._is_opaque_ids(opaque_ids):
                             raise ValueError("Unsupported opaque format: {}".
-                                             format(ver_indices))
-                        object_id, class_id = ver_indices[4:]
-                        pr = self._workspace[object_id].props
+                                             format(opaque_ids[0]))
+                        pr = self._resolve_opaque_ids(opaque_ids)
                         dtype = pr.dtype
+                        dims = pr.shape
                 else:
                     pr = next(reader)
                     dtype = (pr.dtype if not self._mat_dtype else
@@ -434,7 +431,7 @@ class MatFile5Reader(MatFileReader):
         '''
         if isinstance(variable_names, string_types):
             variable_names = [variable_names]
-        self._workspace = self._read_minimat()
+        self._set_workspace()
         self._prepare_stream()
         variables = {"__header__": self._desc,
                      "__globals__": [],  # FIXME Not covered by tests.
@@ -467,7 +464,19 @@ class MatFile5Reader(MatFileReader):
             infos.append((info.name, BytesIO(self._header + raw)))
         return infos
 
-    def _read_minimat(self):
+    def _is_opaque_ids(self, obj):
+        return obj.dtype == np.uint32 and obj[0, 0] == 0xdd000000
+
+    def _resolve_opaque_ids(self, opaque_ids):
+        opaque_ids = opaque_ids.flat
+        ndims = opaque_ids[1]
+        dims = opaque_ids[2:2 + ndims]
+        object_ids = opaque_ids[2 + ndims:-1]
+        class_id = opaque_ids[-1]
+        return (np.array([self._workspace[oid].props for oid in object_ids]).
+                reshape(dims))
+
+    def _set_workspace(self):
         if not self._subsys_offset:
             return
         self._stream.seek(self._subsys_offset)
@@ -484,12 +493,14 @@ class MatFile5Reader(MatFileReader):
         entry, = reader._read_iter()
         data = entry.data
         name, fw = data["MCOS"].item().item()
-        assert self._as_identifiers(name) == ["FileWrapper__"]
+        if self._as_identifiers(name) != ["FileWrapper__"]:
+            raise ValueError("Unexpected name")
         segments = fw.data[0][0].tostring()
         heap = fw.data[1:-2]
         defaults = fw.data[-2].item()
         headers = self._unpack("10L", segments[:0x28])
-        assert headers[0] == 2 and headers[8:] == (0, 0)
+        if headers[0] != 2 or headers[8:] != (0, 0):
+            raise ValueError("Unknown header")
         n_str = headers[1]
         # Strings
         strs = [""]
@@ -503,64 +514,62 @@ class MatFile5Reader(MatFileReader):
         off = headers[2]
         for default in defaults:
             pkg_idx, name_idx, _1, _2 = self._unpack_from("4L", segments, off)
-            assert _1 == _2 == 0
+            if not _1 == _2 == 0:
+                raise ValueError("Unexpected non-zero entries")
             clss.append(MatlabClass(
                 strs[pkg_idx], strs[name_idx], default.item()))
             off += 16
         # Segment 2
-        assert off == headers[3]
+        if off != headers[3]:
+            raise ValueError("Wrong offset")
         props2, off = self._parse_props(strs, segments, off, headers[4], heap)
         # Segment 3
-        assert off == headers[4]
+        if off != headers[4]:
+            raise ValueError("Wrong offset")
         objs = []
         off = headers[4]
         while off < headers[5]:
             cls_idx, _1, _2, seg2_idx, seg4_idx, obj_idx = self._unpack_from(
                 "6L", segments, off)
-            assert _1 == _2 == 0
+            if not _1 == _2 == 0:
+                raise ValueError("Unexpected non-zero entries")
             objs.append(ObjStub(clss[cls_idx], seg2_idx, seg4_idx, obj_idx))
             off += 24
         # Segment 4
-        assert off == headers[5]
+        if off != headers[5]:
+            raise ValueError("Wrong offset")
         props4, off = self._parse_props(strs, segments, off, headers[6], heap)
         # Segment 5, keep Python2 happy.
-        assert off == headers[6]
-        assert set(segments[headers[6]:headers[7]]) == set(b"\0")
+        if off != headers[6]:
+            raise ValueError("Wrong offset")
+        if set(segments[headers[6]:headers[7]]) != set(b"\0"):
+            raise ValueError("Unexpected non-zero fields in headers")
         # Resolve properties
-        real_objs = [None]
+        self._workspace = real_objs = [None]
         for obj in objs[1:]:
-            obj_props = obj.cls.defaults.copy()
-            dtype = obj_props.dtype
-            names = dtype.names or []
+            dtype = obj.cls.defaults.dtype
             fields = dtype.fields or []
-            extra_fields = []
-            for k, v in props2[obj.seg2].items():
-                if k in fields:
-                    obj_props[k] = v
-                else:
-                    extra_fields.append(k)
+            extra_fields = [k for k in chain(props2[obj.seg2], props4[obj.seg4])
+                            if k not in fields]
             if extra_fields:
                 # Extra call to str to keep Python 2 happy.
                 dtype = np.dtype(
                     [(field_name,) + dtype.fields[field_name]
-                     for field_name in names] +
+                     for field_name in fields] +
                     [(str(field_name), "O") for field_name in extra_fields])
-                new_props = np.empty((1, 1), dtype)
-                for k in names:
-                    new_props[k] = obj_props[k]
-                for k, v in props2[obj.seg2].items():
-                    new_props[k] = v
-                obj_props = new_props
-            for k, v in props4[obj.seg4].items():
-                obj_props[k] = v
-            real_objs.append(Obj(obj.cls.name, obj_props, obj.id))
-        # Resolve cross_references
-        # FIXME
-        # References are represented as [0xdd000000 2 1 1 objname classname]
-        # but how to distinguish them from normal arrays?
-        # Some of them are in segment 2 but others (those also saved in the
-        # MAT?) are in segment 4.
-        return real_objs
+            props = np.empty((1, 1), dtype)
+            for k in fields:
+                props[k] = obj.cls.defaults[k]
+            for k, v in chain(props2[obj.seg2].items(),
+                              props4[obj.seg4].items()):
+                props[k] = v
+            real_objs.append(Obj(obj.cls.name, props, obj.id))
+        # Resolve object refs (now that the workspace is populated).
+        for obj in real_objs[1:]:
+            for field in obj.props.dtype.fields:
+                for idx, v in np.ndenumerate(obj.props[field]):
+                    if self._is_opaque_ids(v):
+                        obj.props[field][idx] = self._resolve_opaque_ids(v)
 
     def _parse_props(self, strs, segments, off, until, heap):
         props = []
@@ -569,18 +578,22 @@ class MatFile5Reader(MatFileReader):
             d = {}
             off += 4
             for _ in range(n_props):
-                name_idx, flag, heap_idx = self._unpack_from("3L", segments, off)
+                name_idx, flag, heap_idx = self._unpack_from(
+                    "3L", segments, off)
                 off += 12
                 if flag == 0:
                     value = strs[heap_idx]
                 elif flag == 1:
                     value = heap[heap_idx]
                 elif flag == 2:
-                    assert heap_idx in [0, 1]
+                    if heap_idx not in [0, 1]:
+                        raise ValueError("Invalid boolean")
                     value = bool(heap_idx)
                 else:
                     raise ValueError("Unknown flag")
-                assert strs[name_idx] not in d
+                if strs[name_idx] in d:
+                    raise ValueError(
+                        "Duplicate attribute: {}".format(strs[name_idx]))
                 d[strs[name_idx]] = value
             off += (-off) % 8
             props.append(d)
