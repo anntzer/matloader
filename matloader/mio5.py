@@ -85,11 +85,10 @@ import zlib
 import numpy as np
 from numpy.compat import asbytes
 
-import scipy.sparse
-
-from scipy.lib.six import string_types, PY3
+from .six import string_types, PY3
 if not PY3:
     chr = unichr
+import scipy.sparse
 
 from . import byteordercodes as boc
 from .byteordercodes import native_code, swapped_code

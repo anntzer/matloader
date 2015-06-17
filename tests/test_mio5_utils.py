@@ -16,13 +16,12 @@ from nose.tools import assert_true, assert_false, \
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
      run_module_suite
 
-from scipy.lib.six import u
-
 import matloader.byteordercodes as boc
 import matloader.streams as streams
 from matloader.mio5 import MatFile5Reader
 import matloader.mio5_params as mio5p
 import matloader.mio5_utils as m5u
+from matloader.six import u
 
 
 def test_byteswap():
@@ -97,13 +96,14 @@ def test_read_tag():
     # make reader-like thing
     str_io = BytesIO()
     r = _make_readerlike(str_io)
-    # This works for StringIO but _not_ cStringIO
-    yield assert_raises, StopIteration, next, r._read_iter()
+    with assert_raises(StopIteration):
+        next(r._read_iter())
     # bad SDE
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
     tag['byte_count'] = 5
     _write_stream(str_io, tag.tostring())
-    yield assert_raises, ValueError, next, r._read_iter()
+    with assert_raises(ValueError):
+        next(r._read_iter())
 
 
 def test_read_stream():

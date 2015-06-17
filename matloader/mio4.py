@@ -8,9 +8,8 @@ import warnings
 import numpy as np
 from numpy.compat import asbytes, asstr
 
+from .six import string_types
 import scipy.sparse
-
-from scipy.lib.six import string_types
 
 from .miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)

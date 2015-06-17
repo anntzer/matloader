@@ -17,8 +17,6 @@ import shutil
 import sys
 import warnings
 
-from scipy.lib.six import u, text_type, string_types
-
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_raises, run_module_suite,
                            assert_)
@@ -32,7 +30,7 @@ from matloader.miobase import matdims, MatWriteError, MatReadError
 from matloader.mio import mat_reader_factory, loadmat, savemat, whosmat
 from matloader.mio5 import (MatlabObject, MatFile5Writer, MatFile5Reader,
                             MatlabFunction, varmats_from_mat)
-from matloader import mio5_params as mio5p
+from matloader.six import u, text_type, string_types
 
 
 test_data_path = pjoin(dirname(__file__), 'data')

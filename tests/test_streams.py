@@ -15,11 +15,12 @@ if sys.version_info[0] >= 3:
 else:
     from cStringIO import StringIO as cStringIO
 
-from tempfile import mkstemp
+from tempfile import TemporaryFile
 
 import numpy as np
 
-from nose.tools import assert_true, assert_false, assert_equal, assert_raises
+from nose.tools import (
+    assert_true, assert_false, assert_equal, assert_raises, with_setup)
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            run_module_suite)
@@ -29,43 +30,38 @@ from matloader.streams import (
     _readinto, _read_string)
 
 
-fs = None
-gs = None
-cs = None
-fname = None
+streams = None
 
 
-def setup():
+def setup_test():
+    global streams
     val = b'a\x00string'
-    global fs, gs, cs, fname
-    fd, fname = mkstemp()
-    fs = os.fdopen(fd, 'wb')
+    fs = TemporaryFile()
     fs.write(val)
-    fs.close()
-    fs = open(fname, 'rb')
+    fs.seek(0)
     gs = BytesIO(val)
     cs = cStringIO(val)
+    streams = [fs, gs, cs]
 
 
-def teardown():
-    global fname, fs
-    fs.close()
-    del fs
-    os.unlink(fname)
+def teardown_test():
+    for st in streams:
+        st.close()
 
 
+@with_setup(setup_test, teardown_test)
 def test_make_stream():
-    global fs, gs, cs
     # test stream initialization
+    fs, gs, cs = streams
     assert_true(isinstance(make_stream(gs), GenericStream))
     if sys.version_info[0] < 3:
         assert_true(isinstance(make_stream(cs), cStringStream))
         assert_true(isinstance(make_stream(fs), FileStream))
 
 
+@with_setup(setup_test, teardown_test)
 def test_tell_seek():
-    global fs, gs, cs
-    for s in (fs, gs, cs):
+    for s in streams:
         st = make_stream(s)
         res = st.seek(0)
         yield assert_equal, res, 0
@@ -82,8 +78,7 @@ def test_tell_seek():
 
 
 def test_read():
-    global fs, gs, cs
-    for s in (fs, gs, cs):
+    for s in streams:
         st = make_stream(s)
         st.seek(0)
         res = st.read(-1)

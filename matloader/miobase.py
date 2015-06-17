@@ -7,18 +7,10 @@ MATLAB is a registered trademark of the Mathworks inc.
 """
 from __future__ import division, print_function, absolute_import
 
-import sys
-import operator
-
-from scipy.lib.six import reduce
-
 import numpy as np
 
-if sys.version_info[0] >= 3:
-    byteord = int
-else:
-    byteord = ord
-
+from .six import PY3
+indexbytes = lambda a, b: a[b] if PY3 else ord(a[b])
 from scipy.misc import doccer
 
 from . import byteordercodes as boc
@@ -233,9 +225,9 @@ def get_matfile_version(fileobj):
     tst_str = fileobj.read(4)
     fileobj.seek(0)
     maj_ind = int(tst_str[2] == b'I'[0])
-    maj_val = byteord(tst_str[maj_ind])
-    min_val = byteord(tst_str[1-maj_ind])
-    ret = (maj_val, min_val)
+    maj_val = indexbytes(tst_str, maj_ind)
+    min_val = indexbytes(tst_str, 1 - maj_ind)
+    ret = maj_val, min_val
     if maj_val in (1, 2):
         return ret
     raise ValueError('Unknown mat file type, version %s, %s' % ret)
@@ -305,7 +297,7 @@ def matdims(arr, oned_as='column'):
     shape = arr.shape
     if shape == ():  # scalar
         return (1,1)
-    if reduce(operator.mul, shape) == 0:  # zero elememts
+    if np.product(shape) == 0:  # zero elememts
         return (0,) * np.max([arr.ndim, 2])
     if len(shape) == 1:  # 1D
         if oned_as == 'column':
