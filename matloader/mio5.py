@@ -286,6 +286,7 @@ class MatFile5Reader(MatFileReader):
                 else:
                     flags, nzmax = flags
                 dims, name = islice(reader, 2)
+                dims = tuple(dims)
                 name, = self._as_identifiers(name) or [""]
                 matrix_cls = flags % 0x100
                 f_complex = flags & complex_pattern
@@ -345,7 +346,7 @@ class MatFile5Reader(MatFileReader):
                     pr = MatlabFunction(next(reader).data)
                     dtype = object
                 elif matrix_cls == mxOPAQUE_CLASS:
-                    name, = self._as_identifiers(dims) or ("",)
+                    name, = self._as_identifiers(np.asarray(dims)) or [""]
                     opaque_components = []
                     while stream.tell() < entry_end:
                         opaque_components.append(next(reader))

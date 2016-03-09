@@ -49,10 +49,11 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 cimport streams
-import scipy.io.matlab.miobase as miob
-from scipy.io.matlab.mio_utils import squeeze_element, chars_to_strings
-import scipy.io.matlab.mio5_params as mio5p
 import scipy.sparse
+
+from . import miobase as miob
+from .mio_utils import squeeze_element, chars_to_strings
+from . import mio5_params as mio5p
 
 
 cdef enum:
