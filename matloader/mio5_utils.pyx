@@ -49,11 +49,9 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 cimport streams
-import scipy.sparse
-
 from . import miobase as miob
-from .mio_utils import squeeze_element, chars_to_strings
 from . import mio5_params as mio5p
+import scipy.sparse
 
 
 cdef enum:
