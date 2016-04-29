@@ -399,7 +399,9 @@ class MatFile5Reader(MatFileReader):
                     array = pr.reshape(dims, order="F")
 
                 self._check_and_pad_stream(stream, entry_end)
-                yield MatlabArray(name, squeeze_element(array), f_global)
+                if self._squeeze_me:
+                    array = squeeze_element(array)
+                yield MatlabArray(name, array, f_global)
 
             else:
                 raise ValueError("Unsupported mdtype: {}".format(mdtype))
@@ -450,8 +452,7 @@ class MatFile5Reader(MatFileReader):
                     'previous with new.  Consider mio5.varmats_from_mat to '
                     'split file into single variable files'.format(name),
                     MatReadWarning, stacklevel=2)
-            variables[name] = (squeeze_element(entry.data)
-                               if self._squeeze_me else entry.data)
+            variables[name] = entry.data
         return variables
 
     def get_varmats(self):

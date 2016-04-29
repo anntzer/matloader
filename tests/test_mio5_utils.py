@@ -24,19 +24,6 @@ import matloader.mio5_utils as m5u
 from matloader.six import u
 
 
-def test_byteswap():
-    for val in (
-        1,
-        0x100,
-        0x10000):
-        a = np.array(val, dtype=np.uint32)
-        b = a.byteswap()
-        c = m5u.byteswap_u4(a)
-        yield assert_equal, b.item(), c
-        d = m5u.byteswap_u4(c)
-        yield assert_equal, a.item(), d
-
-
 def _make_tag(base_dt, val, mdtype, sde=False):
     ''' Makes a simple matlab tag, full or sde '''
     base_dt = np.dtype(base_dt)
@@ -152,34 +139,8 @@ def test_read_numeric_writeable():
     yield assert_true, el.flags.writeable
 
 
-# FIXME read_char is not available independently anymore.
-#def test_zero_byte_string():
-    ## Tests hack to allow chars of non-zero length, but 0 bytes
-    ## make reader-like thing
-    #str_io = cStringIO()
-    #r = _make_readerlike(str_io, boc.native_code)
-    #tag_dt = np.dtype([('mdtype', 'u4'), ('byte_count', 'u4')])
-    #tag = np.zeros((1,), dtype=tag_dt)
-    #tag['mdtype'] = mio5p.miINT8
-    #tag['byte_count'] = 1
-    #hdr = m5u.VarHeader5()
-    ## Try when string is 1 length
-    #hdr.set_dims([1,])
-    #_write_stream(str_io, tag.tostring() + b'        ')
-    #str_io.seek(0)
-    #_, val = r._read1()
-    #assert_equal(val, u(' '))
-    ## Now when string has 0 bytes 1 length
-    #tag['byte_count'] = 0
-    #_write_stream(str_io, tag.tostring())
-    #str_io.seek(0)
-    #_, val = r._read1()
-    #assert_equal(val, u(' '))
-    ## Now when string has 0 bytes 4 length
-    #str_io.seek(0)
-    #hdr.set_dims([4,])
-    #_, val = r._read1()
-    #assert_array_equal(val, [u(' ')] * 4)
+# Removed test_byteswap since byteswap_u4 has been removed.
+# Removed test_zero_byte_string since read_char has been removed.
 
 
 if __name__ == "__main__":

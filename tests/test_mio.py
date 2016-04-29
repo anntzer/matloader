@@ -447,10 +447,6 @@ def test_warnings():
         mres = loadmat(fname, struct_as_record=False)
 
 
-def test_regression_653():
-    assert_raises(TypeError, savemat, BytesIO(), {'d':{1:2}}, format='5')
-
-
 def test_structname_len():
     # Test limit for length of field names in structs
     lim = 31
@@ -1068,6 +1064,9 @@ def test_empty_mat_error():
     # Test we get a specific warning for an empty mat file
     sio = BytesIO()
     assert_raises(MatReadError, loadmat, sio)
+
+
+# test_regression_653 removed as in upstream.
 
 
 if __name__ == "__main__":

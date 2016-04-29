@@ -5,7 +5,8 @@ from numpy.testing import *
 from io import BytesIO
 
 import numpy as np
-import scipy.io as sio
+# import scipy.io as sio
+import matloader as sio
 
 
 def make_structarr(n_vars, n_fields, n_structs):

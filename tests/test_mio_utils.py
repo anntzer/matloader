@@ -9,14 +9,7 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
      run_module_suite, assert_
 
-from matloader.mio_utils import cproduct, squeeze_element, chars_to_strings
-
-
-def test_cproduct():
-    assert_(cproduct(()) == 1)
-    assert_(cproduct((1,)) == 1)
-    assert_(cproduct((1,3)) == 3)
-    assert_(cproduct([1,3]) == 3)
+from matloader.mio_utils import squeeze_element, chars_to_strings
 
 
 def test_squeeze_element():
@@ -50,6 +43,9 @@ def test_chars_strings():
     arr = np.array([['']], dtype='U1')
     out_arr = np.array([''], dtype='U1')
     assert_array_equal(chars_to_strings(arr), out_arr)
+
+
+# Removed test_cproduct since cproduct has been removed.
 
 
 if __name__ == "__main__":
