@@ -466,7 +466,7 @@ class MatFile5Reader(MatFileReader):
         return infos
 
     def _is_opaque_ids(self, obj):
-        return obj.dtype == np.uint32 and obj[0, 0] == 0xdd000000
+        return obj.dtype == np.uint32 and obj.flat[0] == 0xdd000000
 
     def _resolve_opaque_ids(self, opaque_ids):
         opaque_ids = opaque_ids.flat
