@@ -12,8 +12,9 @@ Installation
 ------------
 
 ``matloader`` can be installed using a standard
+::
 
-        python setup.py install
+   python setup.py install
 
 Testing
 -------
